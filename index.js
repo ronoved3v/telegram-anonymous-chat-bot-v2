@@ -17,6 +17,19 @@ fs.readdirSync(commandsPath).forEach((file) => {
   }
 });
 
+// Khai báo các lệnh Bot trong menu (hiển thị trong thanh nhập tin nhắn)
+bot.telegram.setMyCommands([
+  { command: "/start", description: "Chào mừng bạn đến với bot!" },
+  { command: "/help", description: "Hiển thị hướng dẫn sử dụng bot" },
+  { command: "/find", description: "Tìm bạn ngẫu nhiên" },
+  { command: "/setgender", description: "Cập nhật giới tính của bạn" },
+  { command: "/cancel", description: "Dừng tìm bạn" },
+  { command: "/stop", description: "Dừng trò chuyện hiện tại" },
+  { command: "/online", description: "Xem ai đang online" },
+  { command: "/checkin", description: "Điểm danh và nhận điểm" },
+  { command: "/points", description: "Kiểm tra điểm của bạn" },
+]);
+
 bot.on("message", async (ctx) => {
   const telegramId = ctx.from.id;
   const user = await User.findOne({ telegramId });
