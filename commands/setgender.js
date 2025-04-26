@@ -9,14 +9,13 @@ module.exports = (bot) => {
       return ctx.reply("Bạn chưa đăng ký. Vui lòng đăng ký trước.");
     }
 
-    const genderOptions = ["male", "female"];
-
-    ctx.reply("Bạn muốn chọn giới tính nào? (Nhập 'male' hoặc 'female')");
+    // Gửi yêu cầu nhập giới tính
+    ctx.reply("Hãy chọn giới tính của bạn: \n1. male\n2. female");
 
     bot.on("text", async (genderCtx) => {
       const gender = genderCtx.message.text.toLowerCase();
 
-      if (!genderOptions.includes(gender)) {
+      if (gender !== "male" && gender !== "female") {
         return genderCtx.reply(
           "Giới tính không hợp lệ. Hãy nhập 'male' hoặc 'female'."
         );
