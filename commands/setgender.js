@@ -1,3 +1,4 @@
+const { Markup } = require("telegraf");
 const User = require("../models/User");
 
 module.exports = (bot) => {
@@ -6,24 +7,54 @@ module.exports = (bot) => {
     const user = await User.findOne({ telegramId });
 
     if (!user) {
-      return ctx.reply("Bạn chưa đăng ký. Vui lòng đăng ký trước.");
+      return ctx.reply(
+        "Bạn chưa đăng ký. Vui lòng sử dụng /start để đăng ký trước."
+      );
     }
 
-    // Gửi yêu cầu nhập giới tính
-    ctx.reply("Hãy chọn giới tính của bạn: \n1. male\n2. female");
+    // Nếu người dùng đã chọn giới tính rồi thì không cần phải chọn lại
+    if (user.gender !== "unknown") {
+      return ctx.reply(`Bạn đã chọn giới tính: ${user.gender}.`);
+    }
 
-    bot.on("text", async (genderCtx) => {
-      const gender = genderCtx.message.text.toLowerCase();
+    // Gửi inline keyboard với lựa chọn giới tính
+    const maleButton = Markup.button.callback("Nam", "male");
+    const femaleButton = Markup.button.callback("Nữ", "female");
 
-      if (gender !== "male" && gender !== "female") {
-        return genderCtx.reply(
-          "Giới tính không hợp lệ. Hãy nhập 'male' hoặc 'female'."
-        );
-      }
+    const keyboard = Markup.inlineKeyboard([maleButton, femaleButton]);
 
-      user.gender = gender;
-      await user.save();
-      genderCtx.reply(`Giới tính của bạn đã được cập nhật thành ${gender}.`);
-    });
+    return ctx.reply("Hãy chọn giới tính của bạn:", keyboard);
+  });
+
+  // Xử lý khi người dùng chọn giới tính là Nam
+  bot.action("male", async (ctx) => {
+    const telegramId = ctx.from.id;
+    const user = await User.findOne({ telegramId });
+
+    if (!user) {
+      return ctx.reply("Bạn chưa đăng ký. Vui lòng sử dụng /start để đăng ký.");
+    }
+
+    // Cập nhật giới tính của người dùng
+    user.gender = "male";
+    await user.save();
+
+    return ctx.reply("Giới tính của bạn đã được cập nhật thành Nam.");
+  });
+
+  // Xử lý khi người dùng chọn giới tính là Nữ
+  bot.action("female", async (ctx) => {
+    const telegramId = ctx.from.id;
+    const user = await User.findOne({ telegramId });
+
+    if (!user) {
+      return ctx.reply("Bạn chưa đăng ký. Vui lòng sử dụng /start để đăng ký.");
+    }
+
+    // Cập nhật giới tính của người dùng
+    user.gender = "female";
+    await user.save();
+
+    return ctx.reply("Giới tính của bạn đã được cập nhật thành Nữ.");
   });
 };

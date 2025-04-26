@@ -42,6 +42,15 @@ bot.on("message", async (ctx) => {
         // Chuyển tiếp ảnh (chọn ảnh có độ phân giải cao nhất)
         const largestPhoto = ctx.message.photo[ctx.message.photo.length - 1];
         await ctx.telegram.sendPhoto(user.partnerId, largestPhoto.file_id);
+      } else if (ctx.message.video) {
+        // Chuyển tiếp video
+        await ctx.telegram.sendVideo(user.partnerId, ctx.message.video.file_id);
+      } else if (ctx.message.animation) {
+        // Chuyển tiếp GIF/Animation
+        await ctx.telegram.sendAnimation(
+          user.partnerId,
+          ctx.message.animation.file_id
+        );
       }
 
       // Cập nhật điểm sau mỗi tin nhắn gửi đi
