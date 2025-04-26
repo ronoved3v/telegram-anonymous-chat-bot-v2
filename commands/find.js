@@ -12,7 +12,12 @@ module.exports = (bot) => {
       );
     }
 
-    // Kiểm tra điểm của người dùng
+    if (user.status === "finding") {
+      return ctx.reply(
+        "Bạn đang trong quá trình tìm bạn. Vui lòng đợi kết quả trước khi tìm tiếp."
+      );
+    }
+
     const randomFind = Markup.button.callback("Tìm ngẫu nhiên", "random");
     const genderFind = Markup.button.callback("Tìm theo giới tính", "gender");
 
@@ -21,17 +26,24 @@ module.exports = (bot) => {
     return ctx.reply("Chọn phương thức tìm bạn:", keyboard);
   });
 
-  // Xử lý tìm kiếm ngẫu nhiên
+  // Tìm ngẫu nhiên (Không yêu cầu điểm)
   bot.action("random", async (ctx) => {
     const telegramId = ctx.from.id;
     const user = await User.findOne({ telegramId });
 
+    // Kiểm tra trạng thái người dùng trước khi tìm kiếm
+    if (user.status === "finding") {
+      return ctx.reply(
+        "Bạn đang trong quá trình tìm bạn. Vui lòng đợi kết quả trước khi tìm tiếp."
+      );
+    }
+
     user.status = "finding";
     await user.save();
 
+    // Tìm một đối tác ngẫu nhiên (không phân biệt giới tính)
     const partner = await User.findOne({
       status: "online",
-      gender: { $ne: user.gender },
       telegramId: { $ne: telegramId },
     });
 
@@ -54,38 +66,46 @@ module.exports = (bot) => {
     }
   });
 
-  // Xử lý tìm kiếm theo giới tính
+  // Tìm theo giới tính (Yêu cầu điểm)
   bot.action("gender", async (ctx) => {
     const telegramId = ctx.from.id;
     const user = await User.findOne({ telegramId });
 
+    // Kiểm tra điểm trước khi cho người dùng chọn giới tính
+    if (user.points < 5) {
+      return ctx.reply(
+        "Bạn không đủ Point để tìm theo giới tính. Cần 5 Point để sử dụng chức năng này."
+      );
+    }
+
     // Hiển thị các giới tính để người dùng chọn
-    const maleButton = Markup.button.callback("Nam", "male");
-    const femaleButton = Markup.button.callback("Nữ", "female");
+    const maleButton = Markup.button.callback("Nam", "maleFind");
+    const femaleButton = Markup.button.callback("Nữ", "femaleFind");
 
     const keyboard = Markup.inlineKeyboard([maleButton, femaleButton]);
 
     return ctx.reply("Chọn giới tính đối tác muốn tìm:", keyboard);
   });
 
-  // Xử lý tìm kiếm theo giới tính Nam
-  bot.action("male", async (ctx) => {
+  // Tìm kiếm theo giới tính Nam
+  bot.action("maleFind", async (ctx) => {
     const telegramId = ctx.from.id;
     const user = await User.findOne({ telegramId });
 
+    // Kiểm tra điểm trước khi bắt đầu tìm kiếm
     if (user.points < 5) {
       return ctx.reply(
-        "Bạn không đủ Point để tìm theo giới tính. Cần 5 Point để sử dụng chức năng này."
+        "Bạn không đủ Point để tìm theo giới tính Nam. Cần 5 Point để sử dụng chức năng này."
       );
     }
 
-    user.points -= 5; // Giảm 5 điểm khi tìm theo giới tính
     user.status = "finding";
     await user.save();
 
+    // Tìm người Nam
     const partner = await User.findOne({
       status: "online",
-      gender: "male", // Tìm người nam
+      gender: "male", // Tìm người Nam
       telegramId: { $ne: telegramId },
     });
 
@@ -103,29 +123,34 @@ module.exports = (bot) => {
         "Đã ghép đôi! Bắt đầu trò chuyện đi nhé~"
       );
       ctx.reply("Đã ghép đôi! Chúc bạn trò chuyện vui vẻ.");
+
+      // Trừ 5 điểm khi ghép đôi thành công
+      user.points -= 5;
+      await user.save();
     } else {
-      ctx.reply("Không tìm thấy người nam phù hợp. Vui lòng đợi nhé~");
+      ctx.reply("Không tìm thấy người Nam phù hợp. Vui lòng đợi nhé~");
     }
   });
 
-  // Xử lý tìm kiếm theo giới tính Nữ
-  bot.action("female", async (ctx) => {
+  // Tìm kiếm theo giới tính Nữ
+  bot.action("femaleFind", async (ctx) => {
     const telegramId = ctx.from.id;
     const user = await User.findOne({ telegramId });
 
+    // Kiểm tra điểm trước khi bắt đầu tìm kiếm
     if (user.points < 5) {
       return ctx.reply(
-        "Bạn không đủ Point để tìm theo giới tính. Cần 5 Point để sử dụng chức năng này."
+        "Bạn không đủ Point để tìm theo giới tính Nữ. Cần 5 Point để sử dụng chức năng này."
       );
     }
 
-    user.points -= 5; // Giảm 5 điểm khi tìm theo giới tính
     user.status = "finding";
     await user.save();
 
+    // Tìm người Nữ
     const partner = await User.findOne({
       status: "online",
-      gender: "female", // Tìm người nữ
+      gender: "female", // Tìm người Nữ
       telegramId: { $ne: telegramId },
     });
 
@@ -143,8 +168,12 @@ module.exports = (bot) => {
         "Đã ghép đôi! Bắt đầu trò chuyện đi nhé~"
       );
       ctx.reply("Đã ghép đôi! Chúc bạn trò chuyện vui vẻ.");
+
+      // Trừ 5 điểm khi ghép đôi thành công
+      user.points -= 5;
+      await user.save();
     } else {
-      ctx.reply("Không tìm thấy người nữ phù hợp. Vui lòng đợi nhé~");
+      ctx.reply("Không tìm thấy người Nữ phù hợp. Vui lòng đợi nhé~");
     }
   });
 };
