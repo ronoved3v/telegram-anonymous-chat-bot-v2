@@ -9,7 +9,7 @@ module.exports = (bot) => {
       // Tạo người dùng mới khi chưa đăng ký
       user = new User({
         telegramId: ctx.from.id,
-        username: ctx.from.username,
+        username: ctx.from.username || "",
         status: "online",
         partnerId: null,
         gender: "unknown",
